@@ -275,6 +275,23 @@ def get_price_history(item_id: str, days: int = 30):
     
     return PriceHistoryResponse(**history_data)
 
+@app.get("/test/{item_id}")
+def test_scraping(item_id: str):
+    """Test eBay scraping with detailed debug info"""
+    try:
+        url = f"https://www.ebay.com/itm/{item_id}"
+        response = requests.get(url, headers=get_random_headers(), timeout=10)
+        
+        return {
+            "item_id": item_id,
+            "url": url,
+            "status_code": response.status_code,
+            "content_length": len(response.content),
+            "title_from_page": response.text[:200] if response.status_code == 200 else "N/A"
+        }
+    except Exception as e:
+        return {"error": str(e), "item_id": item_id}
+
 @app.get("/deals/{category}")
 def find_deals(category: str, min_discount: int = 20, limit: int = 10):
     """Find deals in a specific category (placeholder - requires more complex scraping)"""

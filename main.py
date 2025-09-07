@@ -233,18 +233,18 @@ def get_price_history_from_db(asin: str, days: int = 30):
 # API Endpoints
 @app.get("/")
 def read_root():
-    return {"message": "Amazon Price Tracker API", "docs": "/docs"}
+    return {"message": "eBay Price Tracker API", "docs": "/docs"}
 
-@app.get("/price/{asin}", response_model=PriceResponse)
-def get_current_price(asin: str):
-    """Get current price for an Amazon product by ASIN"""
-    product_data = scrape_amazon_price(asin)
+@app.get("/price/{item_id}", response_model=PriceResponse)
+def get_current_price(item_id: str):
+    """Get current price for an eBay item by Item ID"""
+    product_data = scrape_ebay_price(item_id)
     
     # Save to database
     save_price_to_db(product_data)
     
     return PriceResponse(
-        asin=product_data['asin'],
+        item_id=product_data['item_id'],
         title=product_data['title'],
         current_price=product_data['price'],
         currency=product_data['currency'],
@@ -252,18 +252,18 @@ def get_current_price(asin: str):
         last_updated=datetime.now()
     )
 
-@app.get("/history/{asin}", response_model=PriceHistoryResponse)
-def get_price_history(asin: str, days: int = 30):
-    """Get price history for an Amazon product"""
-    history_data = get_price_history_from_db(asin, days)
+@app.get("/history/{item_id}", response_model=PriceHistoryResponse)
+def get_price_history(item_id: str, days: int = 30):
+    """Get price history for an eBay item"""
+    history_data = get_price_history_from_db(item_id, days)
     
     if not history_data:
         # If no history, get current price first
-        current_data = scrape_amazon_price(asin)
+        current_data = scrape_ebay_price(item_id)
         save_price_to_db(current_data)
         
         return PriceHistoryResponse(
-            asin=asin,
+            item_id=item_id,
             title=current_data['title'],
             price_history=[{
                 'price': current_data['price'],
@@ -291,4 +291,6 @@ def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    import os
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
